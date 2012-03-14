@@ -5,26 +5,26 @@ It is based on a purely script-based wrapper which is being refactored into an O
 
 As such, Tortilla is **very** early stage and not for production use.
 
-== Common Usage ==
+== Common Usage
 
-=== Requirements ===
+=== Requirements
 
 *   A Testlink installation, remote or local
 *   Cucumber binaries ('cucumber')
 *   SQlite3 (for saving testcases/results and configuration locally between testruns)
 
 
-=== General flow===
+=== General flow
 
-1) Set up testplan/build/cases in TestLink
-2) Provide testplan/build to Tortilla
-3) Tortilla pulls testcases (and/or stores them for later running)
-4) Tortilla runs testcases using cucumber and parses fail/skip/success results which are saved
-5) After user intervention, Tortilla uploads testcase execution results and any generated files (failure screenshots, ..) to TestLink
+1.  Set up testplan/build/cases in TestLink
+2.  Provide testplan/build to Tortilla
+3.  Tortilla pulls testcases (and/or stores them for later running)
+4.  Tortilla runs testcases using cucumber and parses fail/skip/success results which are saved
+5.  After user intervention, Tortilla uploads testcase execution results and any generated files (failure screenshots, ..) to TestLink
 
 
 
-== Contributing to tortilla
+== Contributing to Tortilla
  
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
 * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
