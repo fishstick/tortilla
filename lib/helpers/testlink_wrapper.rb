@@ -6,7 +6,7 @@ class TestlinkWrapper
   # TMP
 
   def initialize
-    @conf = VatfDB.instance.general_configuration
+    @conf = TortillaDB.instance.general_configuration
     @tl = TestLinker.new(@conf.server,@conf.devkey)
   end
 

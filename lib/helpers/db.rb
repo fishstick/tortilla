@@ -1,7 +1,7 @@
 require 'active_record'
 require 'helpers/Dbsetup'
 
-class VatfDB
+class TortillaDB
   include Singleton
   include Setup
 

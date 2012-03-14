@@ -2,7 +2,7 @@ class HarnessConfig
   attr_reader :project,:smtp_host
 
   def initialize(opts={})
-    @db_conn = VatfDB.instance
+    @db_conn = TortillaDB.instance
     self.load_config(opts[:project])  if (opts && opts.has_key?(:project) )
   end
 

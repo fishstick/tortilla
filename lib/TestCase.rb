@@ -28,11 +28,11 @@ class TestCase
   def save_to_db(opts={})
     # We only save some testcase properties, not all of them
     test_record = _testcase_to_record.merge(opts)
-    VatfDB.instance.testcase.create_or_update(test_record)
+    TortillaDB.instance.testcase.create_or_update(test_record)
   end
 
   def find_local_feature
-    feature_path = VatfDB.instance.project_configuration.base_path + '/features/'
+    feature_path = TortillaDB.instance.project_configuration.base_path + '/features/'
     self.file = `find #{feature_path} -name #{self.external_id}*`
      # Is this implied? Eitehr let harnass do manual save, or do it within here... Safest would be doing it here as
     # the save function already checks for duplicates
