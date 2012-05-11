@@ -4,7 +4,7 @@ class Harness
 
   def initialize(opts={})
     @test_collection = TestCollection.new(opts)
-    @config = HarnessConfig.new(opts)
+    @config = ConfigSet.new(opts)
   end
 
 

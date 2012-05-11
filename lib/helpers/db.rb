@@ -1,23 +1,19 @@
 require 'active_record'
-require 'helpers/Dbsetup'
 
+# Activerecord interaction for all classes
+# Not meant to be used directly
 class TortillaDB
   include Singleton
-  include Setup
-
   attr_reader :db
 
-  def initialize(db="/tmp/test.db")
-    $db_log = Logger.new('/tmp/db.log')
-    SQLite3::Database.new(db)
-    ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => db)
+  def initialize(db="/home/bme/projects/personal/tortilla/test/test.db")
+    $db_log = ::Logger.new('/tmp/db.log')
+    ::SQLite3::Database.new(db)
+    ::ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => db)
   end
 
-  def general_configuration
-    GeneralConfiguration
-  end
-  def project_configuration
-    ProjectConfiguration
+  def configuration
+    Configuration
   end
   def testcollection
     TestCollection
@@ -28,27 +24,11 @@ class TortillaDB
   def testrelation
     TestRelation
   end
-
-
-  class ProjectConfiguration < ActiveRecord::Base
-    def self.insert(opts={})
-      self.create(opts)
-    end
-
-    def self.create_or_update(attrs_to_match,attrs_to_update={})
-      if (incumbent = self.first(:conditions => attrs_to_match))
-
-        $db_log.debug("Match found : #{incumbent}, updating existing entry")
-        incumbent.update_attributes(attrs_to_update)
-        incumbent
-      else
-        $db_log.debug("No previous match, creating new entry")
-        insert(attrs_to_match.merge(attrs_to_update))
-      end
-    end
+  def setup
+    Setup
   end
 
-  class GeneralConfiguration < ActiveRecord::Base
+  class Configuration < ActiveRecord::Base
     has_many :options
     def self.server
       self.first.server
@@ -58,6 +38,12 @@ class TortillaDB
       self.first.devkey
 
     end
+
+    def all
+      puts self.all
+
+    end
+
 
     def self.insert(opts={})
       self.create(opts)

@@ -59,6 +59,7 @@ class TestlinkWrapper
     test_cases = find_open_testcases(test_collection.project,test_collection.plan,(test_collection.current_build || test_collection.open_builds.first))
     all = []
     test_cases.each do |test_case_hash|
+      puts "DEBUG: #{test_case_hash.inspect}"
       all << {test_case_hash['external_id'] => test_case_hash['name'] }
     end
     all
