@@ -1,6 +1,6 @@
 class SystemCommands
   def initialize
-    OPTIONMAP = {:require => ' -r ',:outputdir => ' -o ',:format => ' --format '}
+    @optionmap = {:require => ' -r ',:outputdir => ' -o ',:format => ' --format '}
     @bin = "/usr/bin/env cucumber "
 
   end
