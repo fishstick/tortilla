@@ -7,6 +7,11 @@ class TestlinkWrapper
     @tl = TestLinker.new(server,devkey)
   end
 
+  def find_projects(project_name)
+    project_name = Regexp.new(project_name) unless project_name.class == Regexp
+    @tl.find_projects(project_name)
+  end
+
   def project_id_from_name(project_name)
     return @tl.project_id(project_name)
   end

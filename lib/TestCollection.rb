@@ -91,23 +91,21 @@ class TestCollection
     @db_entry = @db_conn.testcollection.find(:last, :conditions => {:project_id => self.project_id,:plan_id => self.plan_id}.merge(opts))
   end
 
-  def find_existing
-    requirement_hook do
+  #def find_existing
+  #  requirement_hook do
+  #
+  #    if self.project_id && self.plan_id
+  #      if (existing_testcollection = TortillaDB.instance.testcollection.last(:conditions => {:project_id => self.project_id,:plan_id => self.plan_id}) )
+  #        return  existing_testcollection
+  #
+  #      end
+  #    else
+  #      puts 'Either plan_id or projectid is nil, not polling DB'
+  #    end
+  #
+  #  end
 
-      if self.project_id && self.plan_id
-        if (existing_testcollection = TortillaDB.instance.testcollection.last(:conditions => {:project_id => self.project_id,:plan_id => self.plan_id}) )
-          return  existing_testcollection
-
-        end
-      else
-        puts 'Either plan_id or projectid is nil, not polling DB'
-      end
-
-    end
-
-
-
-  end
+  #end
 
   # Save current, or find an existing saved Testrun
   def save_or_find_existing
@@ -115,7 +113,12 @@ class TestCollection
     if (existing_testcollection = TortillaDB.instance.testcollection.last(:conditions => {:project_id => self.project_id,:plan_id => self.plan_id}) )
       puts 'found one'
       puts existing_testcollection.inspect
+      _set_instance_vars_from_opts(existing_testcollection.attributes)
+
       return existing_testcollection
+      # set self == dbcon
+
+
     else
       puts 'new'
       return @db_conn.testcollection.create_or_update(record_hash)
@@ -155,6 +158,8 @@ class TestCollection
 
   def  _set_instance_vars_from_opts(opts)
     opts.each do |name,value|
+      puts 'NAME ' + name.inspect
+      puts 'VALUE ' + value.inspect
       self.instance_variable_set(('@' + name.to_s).to_sym,value)
     end
   end
