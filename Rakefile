@@ -29,7 +29,7 @@ end
 Jeweler::RubygemsDotOrgTasks.new
 
 namespace :db  do
-require 'test/db/setup.rb'
+require 'lib/Database/setup.rb'
   desc "Reset DB"
   task :reset do
 

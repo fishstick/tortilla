@@ -3,6 +3,8 @@
 #:summary=>"<p>Filesets can be deleted. Those  Filesets can be assigned to zero, one of more ASP&nbsp;Applications for the given  ASP.</p>\n<p><strong><span style=\"color: rgb(255, 0, 0);\">Note: it is unclear if only the Vasco Admin Operator should be able to do this, or also the ASP&nbsp;Operator?</span></strong></p>",
 #:z=>100, :linked_ts=>"2011-12-14 12:34:17", :exec_on_tplan=>"", :name=>"Delete Application Fileset", :urgency=>2, :exec_status=>"n", :execution_order=>1000, :version=>1, :tc_id=>11914, :tsuite_name=>"File Sets", :priority=>4, :exec_id=>""}
 
+
+
 class TestCase
   attr_accessor :urgency,:file,:external_id,:internal_id,:platforms,:tl_props ,:name
 
@@ -28,7 +30,9 @@ class TestCase
   def save_to_db(opts={})
     # We only save some testcase properties, not all of them
     test_record = _testcase_to_record.merge(opts)
-    TortillaDB.instance.testcase.create_or_update(test_record)
+    res = TortillaDB.instance.testcase.create_or_update(test_record)
+    $log.debug("Saved Testcase #{self.external_id} to DB.")
+    return res
   end
 
   def find_local_feature

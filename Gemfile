@@ -1,13 +1,15 @@
+source "http://gems.infra.vasco.com/"
 source "http://rubygems.org"
+
 # Add dependencies required to use your gem here.
 # Example:
 #   gem "activesupport", ">= 2.3.5"
-
-
+gem 'versionomy'
+gem 'vatf_testlinker'
 gem 'sqlite3'
 gem 'logger'
 gem 'activerecord'
-
+gem 'highline'
 
 
 

@@ -23,6 +23,12 @@ As such, Tortilla is **very** early stage and not for production use.
 5.  After user intervention, Tortilla uploads testcase execution results and any generated files (failure screenshots, ..) to TestLink
 
 
+=== TODO Checklist
+==== Config
+* Test general usage: Create, Read, Update, Delete
+* Proper return messages, hide db interface as much as possible
+
+
 
 == Contributing to Tortilla
  
