@@ -8,8 +8,6 @@ class TortillaDB
 
   def initialize(db="/home/bme/projects/personal/tortilla/test/test.db")
     $db_log = ::Logger.new(Tortilla::DB_LOG)
-    puts $db_log.inspect
-
     ::SQLite3::Database.new(db)
     ::ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => db)
   end
