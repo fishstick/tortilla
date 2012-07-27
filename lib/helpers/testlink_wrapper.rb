@@ -3,7 +3,8 @@ require 'test_linker'
 class TestlinkWrapper
 
   def initialize(server,devkey)
-    $log.debug("TL CONNECTING to #{server} ,#{devkey}")
+    @log = Logger.new(Tortilla::DEV_LOG)
+    @log.debug("TL CONNECTING to #{server} ,#{devkey}")
     @tl = TestLinker.new(server,devkey)
   end
 
@@ -40,7 +41,7 @@ class TestlinkWrapper
   end
 
   def find_open_testcases(plan_id,build_id,opts={})
-    $log.debug("Find open testscases for plan ID #{plan_id.inspect} and build ID #{build_id.inspect}")
+    @log.debug("Find open testscases for plan ID #{plan_id.inspect} and build ID #{build_id.inspect}")
     test_cases = @tl.test_cases_for_test_plan(plan_id,{ "buildid" =>build_id })
     tc_arr = []
     unless (test_cases.nil? || test_cases.empty?) then
@@ -79,7 +80,7 @@ class TestlinkWrapper
     test_cases = find_open_testcases(test_collection.plan_id,(test_collection.current_build[:id] || test_collection.open_builds.first[:id]))
     all = []
     test_cases.each do |test_case_hash|
-      $log.debug("LIST TESTCASE - A testcase: #{test_case_hash.inspect}")
+      @log.debug("LIST TESTCASE - A testcase: #{test_case_hash.inspect}")
       all << {test_case_hash['external_id'] => test_case_hash['name'] }
     end
     all

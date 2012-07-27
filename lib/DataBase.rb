@@ -7,7 +7,9 @@ class TortillaDB
   attr_reader :db
 
   def initialize(db="/home/bme/projects/personal/tortilla/test/test.db")
-    $db_log = ::Logger.new('/tmp/db.log')
+    $db_log = ::Logger.new(Tortilla::DB_LOG)
+    puts $db_log.inspect
+
     ::SQLite3::Database.new(db)
     ::ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => db)
   end
@@ -43,9 +45,6 @@ class TortillaDB
       self.delete
     end
 
-    def delete!
-      self.delete!
-    end
 
     def all
       self.all
@@ -57,7 +56,7 @@ class TortillaDB
 
     def self.create_or_update(attrs_to_match,attrs_to_update={})
       if (incumbent = self.first(:conditions => attrs_to_match))
-        $db_log.debug("Match found : #{incumbent}, updating existing entry")
+        $db_log.debug("Match found : #{incumbent.inspect}, updating existing entry")
         incumbent.update_attributes(attrs_to_update)
         incumbent
       else

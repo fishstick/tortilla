@@ -1,34 +1,56 @@
 class TortillaConfig
 
   attr_reader :config_options
+  attr_accessor :db_conn
+  # Create a new configuration, or load an existing one by name
+  # @param opts [Hash] Initiialisation options
+  # @option opts [Symbol] :name Existing config name to load
   def initialize(opts={})
     @db_conn = TortillaDB.instance.configuration
     # If name given, open an existing config
     @config_options = []
-    self.load(opts[:name])  if opts.has_key?(:name)
-  end
+
+    if opts.has_key?(:name)
+      # Name given => attempt to load existing conf
+      self.load(opts[:name])
+    else
+      create_attribute_accessors(@db_conn)
+      # No name => assume new/Empty config, make proper attribute accessors anyway
 
 
-
-
-  # Overwrites existing configs wit that name
-  def create_or_update(opts,update_opts={})
-    if self.name
-      @db_conn.create_or_update({:name => self.name}.merge(opts),update_opts)
-      puts "Created config #{self.name}"
     end
   end
 
 
 
+
+  # Overwrites existing configs wit that name, or creates a new one if it doesn't exist yet
+  def create_or_update(opts,update_opts={})
+    if self.name # Only save when a name is known
+      @db_conn.create_or_update({:name => self.name}.merge(opts),update_opts)
+    end
+  end
+
+
+  def create_attribute_accessors(record)
+    record.attribute_names.each do |attr_name|
+      self.instance_variable_set(('@' + attr_name),record.read_attribute(attr_name)) if record.class == TortillaDB::Configuration # Dont do this for plain/empty db connections
+      _mk_updater_method(attr_name)  # make attr_accessor-like method that auto-updates the DB values, too...
+      _mk_reader_method(attr_name)  # make attr_reader-like method that auto-updates the DB values, too...
+      _add_to_options(attr_name) # Add to the list of config directives so other methods can easily distinguish between 'normal' instance vars and ORM vars
+    end
+    true
+  end
+
+  # Load an existing config by name
+  # Does a few important things:
+  # * Sets internal instance variables based on each Config attribute
+  # * Makes attr-reader and attr-updater methods for each
+  # * Adds each attr to a helper array of all options, so other classes can request which options are available (for enumeration, for example)
+  # * The attr-updater methods provide an ORM between TortillaConfig and activerecord
   def load(name)
     if (record = open_configuration(name))
-      record.attribute_names.each do |attr_name|
-        self.instance_variable_set(('@' + attr_name),record.read_attribute(attr_name))
-        _mk_updater_method(attr_name)  # make attr_accessor-like method that auto-updates the DB values, too...
-        _mk_reader_method(attr_name)  # make attr_reader-like method that auto-updates the DB values, too...
-        _add_to_options(attr_name) # Add to the list of config directives so other methods can easily distinguish between 'normal' instance vars and ORM vars
-      end
+      create_attribute_accessors(record)
       puts "Config #{name} loaded..."
       return self
     else
@@ -42,21 +64,36 @@ class TortillaConfig
     @db_conn.all
   end
 
-  def save(search_opts,new_opts)
-    @db_conn.create_or_update({:name => self.name}.merge(search_opts),new_opts)
+  def save()
+    record = create_config_record
+    @db_conn.create_or_update({:name => self.name}.merge(record),record)
   end
 
+
+  # TODO: FIX!!
+  # Delete requires an ID, not a name
   def delete(name = self.name)
     if name.nil? || name.empty?
       puts "No config loaded and no name given"
     else
-      @db_conn.delete!(name)
+      @db_conn.delete(name)
     end
-
-
   end
 
 
+  # Create a proper hash of self in order to save
+  def create_config_record
+    puts @config_options.inspect
+    record_hash = {}
+    @config_options.each do |key|
+
+      puts key.inspect
+      value =  self.send(key)
+      next if value.nil?  # Dont save empty keys
+      record_hash[key.to_sym] = value
+    end #each
+    record_hash
+  end
 
 
   private
@@ -74,7 +111,7 @@ class TortillaConfig
   def _mk_updater_method(attr_name)
     self.class.send(:define_method,(attr_name + '=').to_sym) do |new_value|
       old_value = self.instance_variable_get(('@' + attr_name))
-      update({attr_name.to_sym => old_value},{attr_name.to_sym => new_value})
+      create_or_update({attr_name.to_sym => old_value},{attr_name.to_sym => new_value})
       self.instance_variable_set(('@' + attr_name),new_value)
     end
   end
@@ -89,5 +126,8 @@ class TortillaConfig
   def _add_to_options(attr_name)
     @config_options.push(attr_name.to_sym) unless @config_options.include?(attr_name.to_sym)
   end
+
+
+
 
 end
