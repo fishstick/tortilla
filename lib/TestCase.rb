@@ -14,6 +14,7 @@ class TestCase
     @urgency,@external_id,@tc_id,@execution_type,@name,@platform_id = nil
     @file = ""
     @tl_props = {}
+    $log = Logger.new(Tortilla::DEV_LOG)
     unless test_hash.empty?
       create_from_hash(test_hash)
     end

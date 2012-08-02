@@ -8,9 +8,24 @@ class TestlinkWrapper
     @tl = TestLinker.new(server,devkey)
   end
 
-  def find_projects(project_name)
+  def find_projects(project_name,opts={:full => false})
     project_name = Regexp.new(project_name) unless project_name.class == Regexp
-    @tl.find_projects(project_name)
+    all_projects = @tl.find_projects(project_name)
+    res = []
+    if opts[:full] == true
+      # show all projects
+      res = all_projects
+    else
+      # show only active projects
+      all_projects.each do |project_hash|
+        if project_hash.has_key?(:active) && project_hash[:active] == "1"
+          res << project_hash
+        else
+          @log.debug("Project #{project_hash[:name]} is not an active project, skipping. Use :full => true if desired")
+        end
+      end
+    end #unless
+    return res
   end
 
   def project_id_from_name(project_name)
@@ -18,7 +33,9 @@ class TestlinkWrapper
   end
 
   def find_test_plans_for_project_id(project_id,plan_regex)
-    @tl.find_test_plans(project_id, Regexp.new(plan_regex))
+    plan_regex = Regexp.new(plan_regex) unless plan_regex.class == Regexp
+    res = @tl.find_test_plans(project_id, Regexp.new(plan_regex))
+    res
   end
 
   def get_platforms_for_testplan(testplan_id)
@@ -47,9 +64,8 @@ class TestlinkWrapper
     unless (test_cases.nil? || test_cases.empty?) then
       #  We return all testcases and let the other functiosn and/or TestCollection handle the sorting
       test_cases.each_value do |test_case|
-        # Testlink call returns a hash of hashes, eg {"123" => {'name'=>'a test','exec_status => 'n'}}
-        # So we dont really care about the first key
-        test_case = test_case.values.first
+        #puts test_case.inspect
+        test_case = test_case.first
         tc_arr.push(test_case)
       end
     end

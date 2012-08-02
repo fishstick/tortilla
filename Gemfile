@@ -10,6 +10,8 @@ gem 'sqlite3'
 gem 'logger'
 gem 'activerecord'
 gem 'highline'
+gem 'progress_bar'
+gem 'sys-uname'
 
 
 

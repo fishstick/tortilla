@@ -5,10 +5,14 @@ require 'yaml'
     begin
       puts "Creating..."
       ActiveRecord::Schema.define do
-        create_table :test_relations do |table|
-          table.column :test_case_id, :integer
-          table.column :test_collection_id, :integer
+        #create_table :test_relations do |table|
+        #  table.column :test_case_id, :integer
+        #  table.column :test_collection_id, :integer
+        #end
+        create_table :defaults do |table|
+          table.column :configuration_id, :integer
         end
+
 
         # Project configuration
         create_table :configurations do |table|
@@ -36,7 +40,7 @@ require 'yaml'
           table.column :plan_id, :string
           table.column :build, :string
           table.column :testrun_id, :string
-          table.column :testcases, :string
+          table.column :test_cases, :string
         end
 
         create_table :test_cases do |table|
@@ -85,8 +89,8 @@ end # def
     begin
 puts "Destroying..."
       ActiveRecord::Schema.define do
+        drop_table :defaults
         drop_table :configurations
-        drop_table :test_relations
         drop_table :test_collections
         drop_table :test_cases
       end

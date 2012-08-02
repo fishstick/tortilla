@@ -7,6 +7,7 @@ class TortillaConfig
   # @option opts [Symbol] :name Existing config name to load
   def initialize(opts={})
     @db_conn = TortillaDB.instance.configuration
+    @default_config =  TortillaDB.instance.defaults.configuration
     # If name given, open an existing config
     @config_options = []
 
@@ -16,12 +17,36 @@ class TortillaConfig
     else
       create_attribute_accessors(@db_conn)
       # No name => assume new/Empty config, make proper attribute accessors anyway
-
-
     end
   end
 
 
+
+ # There can only ever be one record in default_configuration, so get the first one.
+  # Returns the tortillaDb::Configuration entry that is currently the default config
+  def find_default_config
+    @db_conn.find_by_id(@default_config)
+  end
+  # Loads the tortillaDb::Configuration entry that is currently the default config
+  def load_default_config
+    self.load(find_default_config.name)
+  end
+
+  # Set self as the default config
+  def set_as_default_config
+    if self.id.nil?
+      puts 'Current configuration is not yet saved, cannot set as default'
+    elsif self.id == default_config_id
+      puts 'Currently loaded config is already default'
+    elsif self.id != default_config_id
+      puts 'Saving this one as default'
+      @default_config.set_default_configuration(self.id)
+    else
+      puts 'Something unexpected'
+    end
+
+
+  end
 
 
   # Overwrites existing configs wit that name, or creates a new one if it doesn't exist yet
@@ -58,6 +83,8 @@ class TortillaConfig
       false
     end
   end
+
+
 
 
   def list

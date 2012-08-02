@@ -2,7 +2,7 @@ class SystemCommands
   def initialize
     @optionmap = {:require => ' -r ',:outputdir => ' -o ',:format => ' --format '}
     @bin = "/usr/bin/env cucumber "
-
+    @os = determine_os
   end
 #outputdir
 # format (html/human)

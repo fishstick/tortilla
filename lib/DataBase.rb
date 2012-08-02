@@ -6,6 +6,10 @@ class TortillaDB
   include Singleton
   attr_reader :db
 
+
+  # TODO:
+  # * Adapters
+  # * Default DB location, should be unique per gemset - perhaps save somewhere in gem?
   def initialize(db="/home/bme/projects/personal/tortilla/test/test.db")
     $db_log = ::Logger.new(Tortilla::DB_LOG)
     ::SQLite3::Database.new(db)
@@ -27,16 +31,50 @@ class TortillaDB
   def setup
     Setup
   end
+  def defaults
+    Default
+  end
+
+  class Default < ActiveRecord::Base
+    has_one :configurations
+
+    # TODO: Validators to make sure only ever one exists!
+    def self.configuration
+      self.first.configuration_id
+    end
+
+    # sets a configuration +id+ as the default config
+    def set_default_configuration(id)
+      self.first.update_attributes!(:configuration_id => id)
+    end
+
+    def self.create_or_update(attrs_to_match,attrs_to_update={})
+      if (incumbent = self.first)
+        $db_log.debug("Match found : #{incumbent.inspect}, updating existing entry")
+        incumbent.update_attributes(attrs_to_update)
+        incumbent
+      else
+        $db_log.debug("No previous match, creating new entry")
+        create(attrs_to_match.merge(attrs_to_update))
+      end
+    end
+
+
+
+
+
+
+
+  end
 
   class Configuration < ActiveRecord::Base
-    has_many :options
+    belongs_to :default_configurations
     def self.server
       self.first.server
     end
 
     def self.devkey
       self.first.devkey
-
     end
 
     def delete
@@ -69,7 +107,6 @@ class TortillaDB
     #,:join_table => "test_relations"
 
     def add_test(test)
-      puts 'IN DB ADD TEST'
       self.test_cases<< test
     end
 

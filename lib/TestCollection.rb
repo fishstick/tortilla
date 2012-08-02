@@ -62,9 +62,6 @@ class TestCollection
   def save!
     save_or_find_existing
 
-    unless (self.testcases.nil? || self.testcases.empty?)
-
-    end
   end
 
   def load!(opts={})
@@ -79,9 +76,28 @@ class TestCollection
     end
   end
 
+  def current_build_name
+    if self.current_build
+      self.current_build[:name]
+    else
+      nil
+    end
+  end
 
 
+  # Returns true if all required vars are set
+  # During the process it also sets them, so things like current_build can be evaluated from outside
+  # And helpfully also
+  def prepared?
+    begin
 
+      requirement_hook { return true }
+
+    rescue ArgumentError
+      return false
+    end
+
+  end
 
   ########
   private
@@ -99,21 +115,7 @@ class TestCollection
     @db_entry = @db_conn.testcollection.find(:last, :conditions => {:project_id => self.project_id,:plan_id => self.plan_id}.merge(opts))
   end
 
-  #def find_existing
-  #  requirement_hook do
-  #
-  #    if self.project_id && self.plan_id
-  #      if (existing_testcollection = TortillaDB.instance.testcollection.last(:conditions => {:project_id => self.project_id,:plan_id => self.plan_id}) )
-  #        return  existing_testcollection
-  #
-  #      end
-  #    else
-  #      puts 'Either plan_id or projectid is nil, not polling DB'
-  #    end
-  #
-  #  end
 
-  #end
 
   # Save current, or find an existing saved Testrun
   def save_or_find_existing
@@ -168,7 +170,7 @@ class TestCollection
     record_hash = {}
     self.instance_variables.each do |var|
       case var
-        when '@collection','@log','@db_conn','@testlink','@db_entry'
+        when '@collection','@log','@db_conn','@testlink','@db_entry','@current_build','@open_builds'
           # dont save
         else
           key = var.split('@').last
@@ -203,6 +205,7 @@ class TestCollection
   end
 
 
+
   # Sets and validates remote requirements based on given basic requiremetns (specifically: self.project and self.plan)
   # based on the basic requirements (plan name and project name), we determine their IDs and any builds related to those projects
   # Because of the ORM model, we do this EVERY time, as the plan and/or project may have changed, and an unsynced ORM is a terrible thing.
@@ -231,12 +234,18 @@ class TestCollection
       raise RemoteError,"No open builds found to collect tests from. Open at least one build for current test plan!"
     elsif self.open_builds.length == 1
       self.current_build = self.open_builds.first
+      @log.debug("Perfect, only one build is open")
       # good
     elsif self.open_builds.length > 1
       # Pick newest, but warn
       # Should be toggle-able behaviour probably
-      self.current_build = self.open_builds.first
-      @log.warn("Multiple builds found, auto-selecting newest build (#{self.current_build}). Set desired build manually, if needed.")
+      if self.current_build
+        @log.warn("Multiple builds found, but already have a current_build set (#{self.current_build_name}) - not overwriting!")
+
+      else
+        @log.debug("Found multiple builds, current build not set: using most recent build in list.")
+        self.current_build = self.open_builds.first
+      end
     end
   end
 
