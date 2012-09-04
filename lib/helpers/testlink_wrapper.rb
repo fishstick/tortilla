@@ -18,7 +18,7 @@ class TestlinkWrapper
     else
       # show only active projects
       all_projects.each do |project_hash|
-        if project_hash.has_key?(:active) && project_hash[:active] == "1"
+        if project_hash.has_key?(:active) && (project_hash[:active] == 1 || project_hash[:active] == "1")
           res << project_hash
         else
           @log.debug("Project #{project_hash[:name]} is not an active project, skipping. Use :full => true if desired")
@@ -50,7 +50,7 @@ class TestlinkWrapper
     builds = @tl.builds_for_test_plan(testplan_id)
     open_builds = []
     builds.each do |build_hash|
-      if build_hash[:is_open] == "1" then
+      if (build_hash[:is_open] == "1"|| build_hash[:is_open] == 1) then
         open_builds <<  {:name => build_hash[:name], :id => build_hash[:id] }
       end
     end
@@ -74,7 +74,10 @@ class TestlinkWrapper
 
 
 
+ def get_platforms_for_testplan(plan_id)
+   @tl.getTestPlanPlatforms(plan_id)
 
+ end
 
 
 

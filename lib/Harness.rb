@@ -9,40 +9,37 @@
 class Harness
   attr_accessor :test_collection,:config,:cli,:testlink
 
-
+  include Exceptions
 
   # A new Harness object
 
-  def initialize(config_name = nil)
+  def initialize(config_name=nil)
     @log = Logger.new(Tortilla::DEV_LOG)
-    if config_name
-      # Load an existing config
-      @config = TortillaConfig.new(:name => config_name)
+    unless config_name.nil?
+      load_config(config_name)
       set_requirements
-    else
-      # Load default config
-      @config = TortillaConfig.new
-      @config.load_default_config
-      set_requirements
+
     end
     @cli = Interface.new
-    self.extend(Interface::Menus)  # extend  with all the Menus for selecting, so they don't pollute the clas shere
+    self.extend(Interface::Menus)  # extend  with all the Menus for selecting, so they don't pollute the class here
   end
 
 
   # Pivotal method - loads the config, then uses the config values to prepare critical objects of underlying structures
   def set_requirements(opts={})
     @log.debug("Setting requirements")
-    #@config = TortillaConfig.new(:name => config_name)
-    @testlink = TestlinkWrapper.new(@config.server,@config.devkey)
+    @testlink = TestlinkWrapper.new(@config.testlink_server,@config.dev_key)
     @test_collection = TestCollection.new(@testlink,opts)
   end
 
-  def list_projects(full=false)
-    _requirement_hook do
-      res =  @testlink.find_projects(/\w/)
-      return res
-    end
+  def load_config(config_name)
+   @config = Config::open_and_parse(config_name)
+   set_requirements
+  end
+
+
+  def list_projects
+    _requirement_hook { @testlink.find_projects(/\w/) }
   end
 
   def list_testplans(full=false)
@@ -54,28 +51,23 @@ class Harness
   end
 
   def list_tests
-    _requirement_hook do
-
-      res = @test_collection.list_remote
-      return res
-    end
-
+    _requirement_hook { @test_collection.list_remote }
   end
 
-  def get_tests_and_save
+  def fetch_tests
     _requirement_hook do
-      puts 'Saving tests...'
-      pbar = ProgressBar.new(@num_tests,:counter,:bar )
-      @test_collection.fetch_remote.each do |test|
-        @test_collection.add_test(test)
-        pbar.increment!
+      @test_collection.fetch_and_add_testcases   do   |num|
+        yield num if block_given?
       end
-
-      #
-      #res = @test_collection.fetch_and_add_testcases
-      #return res
+      System.clear_screen
     end
+    return @test_collection.test_cases
+  end
 
+  def find_local_features
+    @test_collection.find_local_features do |find_result|
+      yield find_result if block_given?
+    end
   end
 
   def open_builds
@@ -87,8 +79,11 @@ class Harness
   # main routine
   def main
     loop do
-
-      open_menu('Main')
+      if self.config.nil?
+        open_menu('Configure Tortilla')
+      else
+        open_menu('Main')
+      end
 
     end
 
@@ -99,19 +94,35 @@ class Harness
 
   # attr Helpers
   def project
-    self.test_collection.project
+    if self.test_collection.nil?
+      nil
+    else
+
+      self.test_collection.project
+    end
   end
   def project=(new_project)
     self.test_collection.project=new_project
   end
 
   def plan
-    self.test_collection.plan
+    if self.test_collection.nil?
+      nil
+    else
+      self.test_collection.plan
+    end
   end
   def plan=(new_plan)
     self.test_collection.plan=new_plan
   end
 
+  def current_build_name
+    if self.test_collection.nil?
+      nil
+    else
+      self.test_collection.current_build_name
+    end
+  end
 
 
 
@@ -124,6 +135,7 @@ class Harness
     if (@testlink && @test_collection)
       yield block
     else
+      set_requirements
       msg =  "No config was loaded - can't perform actions that rely on it! Use load_config and/or create_config"
       puts msg
       @log.warn(msg)
@@ -132,7 +144,9 @@ class Harness
 
 
 
-  protected
+
+
+
 
 
 

@@ -11,10 +11,11 @@ class TestCase
   # Create a new TestCase object
   # If a testhash is provided, testcase object is immediately completed, otherwise properties can be set manually.
   def initialize(test_hash={})
-    @urgency,@external_id,@tc_id,@execution_type,@name,@platform_id = nil
+    @urgency,@external_id,@tc_id,@execution_type,@name,@platform_id,@platform_name = nil
     @file = ""
     @tl_props = {}
     $log = Logger.new(Tortilla::DEV_LOG)
+    #puts test_hash.inspect
     unless test_hash.empty?
       create_from_hash(test_hash)
     end
@@ -27,22 +28,6 @@ class TestCase
     set_properties
   end
 
-
-  def save_to_db(opts={})
-    # We only save some testcase properties, not all of them
-    test_record = _testcase_to_record.merge(opts)
-    res = TortillaDB.instance.testcase.create_or_update(test_record)
-    $log.debug("Saved Testcase #{self.external_id} to DB.")
-    return res
-  end
-
-  def find_local_feature
-    feature_path = TortillaDB.instance.project_configuration.base_path + '/features/'
-    self.file = `find #{feature_path} -name #{self.external_id}*`
-     # Is this implied? Eitehr let harnass do manual save, or do it within here... Safest would be doing it here as
-    # the save function already checks for duplicates
-     save_to_db
-  end
 
 
 ##############
@@ -67,8 +52,11 @@ class TestCase
   def set_tl_properties
     @tl_props.each do |property,value|
       if (self.instance_variable_defined?(('@' + property.to_s))  && self.instance_variable_get(('@' + property.to_s)) == nil)     # is it an internal property we map 1:1  and don't have yet
-        self.instance_variable_set(('@' + property.to_s),value )
+        self.instance_variable_set(('@' + property.to_s),value.to_s )
         @tl_props.delete(property)
+        self.class.send(:define_method,(property.to_s)) do
+          self.instance_variable_get(('@' + property.to_s))
+        end
       end
     end
   end
@@ -77,23 +65,10 @@ class TestCase
     @tl_props.delete(:summary)
   end
 
-
-  # TestCase object => DB record
-  def _testcase_to_record
-    record_hash = {}
-    self.instance_variables.each do |var|
-      case var
-        when '@tl_props','@execution_type','@tc_id'
-          # dont save
-        else
-          key = var.split('@').last
-          value =  self.instance_variable_get(var)
-          record_hash[key.to_sym] = value
-      end
-    end #each
-    record_hash
+  def _mk_reader_method(attr_name)
+    self.class.send(:define_method,(attr_name).to_sym) do
+      self.instance_variable_get(('@' + attr_name))
+    end
   end
-
-
 
 end

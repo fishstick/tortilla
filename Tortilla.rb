@@ -6,10 +6,10 @@ module Tortilla
   require 'sys/uname'
   require 'progress_bar'
 
+  require 'lib/helpers/Constants'
+  include Constants
 
   # Own classes
-  DEV_LOG = "/tmp/dev.log"
-  DB_LOG = "/tmp/db.log"
 
   require 'lib/helpers/testlink_wrapper'
   require 'lib/helpers/Exceptions'

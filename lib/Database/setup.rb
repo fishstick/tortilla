@@ -38,9 +38,9 @@ require 'yaml'
           table.column :project_id, :string
           table.column :plan, :string
           table.column :plan_id, :string
-          table.column :build, :string
-          table.column :testrun_id, :string
-          table.column :test_cases, :string
+          #table.column :build, :string
+          #table.column :testrun_id, :string
+          #table.column :test_cases, :string
         end
 
         create_table :test_cases do |table|

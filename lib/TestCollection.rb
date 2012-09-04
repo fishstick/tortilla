@@ -2,12 +2,16 @@
 
 
 # A Test collection is defined as the relationship between a test project and test plan, and the testcases matching those parameters
-# *  Testcollections have a one-to-many relationship with TestCases
+
 class TestCollection
+  require 'ostruct'
+  require 'find'
+
+
   include Exceptions
 
-  attr_accessor :plan,:plan_id,:project,:project_id,:platforms,:prefix,:current_build,:open_builds
-  attr_reader :db_entry
+  attr_accessor :plan,:plan_id,:project,:project_id,:available_platforms,:prefix,:current_build,:open_builds,:prefix ,:active_platforms
+  attr_reader :db_entry, :test_cases
 
 
   # config in this case is a Configuration object
@@ -15,14 +19,13 @@ class TestCollection
   # @option opts :
   def initialize(testlink_obj,opts={})
     @log = Logger.new(Tortilla::DEV_LOG)
-    raise ParameterError, "TestCollection needs to be initialized with a TortillaConfig object"  unless testlink_obj.class == TestlinkWrapper
+    raise ParameterError, "TestCollection needs to be initialized with a TestLink object"  unless testlink_obj.class == TestlinkWrapper
     @testlink = testlink_obj
-    @db_conn = TortillaDB.instance
-    _set_instance_vars_from_opts(opts)
-    @test_cases = []
 
-    # See if there's a db-saved copy of this testcollection already!
-    @db_entry = save_or_find_existing
+    _set_instance_vars_from_opts(opts)
+    self.available_platforms = []
+    self.active_platforms = []
+    @test_cases = []
   end
 
   # List summary of remote testcases matching current testrun attributes
@@ -37,8 +40,17 @@ class TestCollection
 
   def fetch_and_add_testcases
     @log.debug("Fetch and Add testcases!")
+    i = 1
     fetch_remote.each do |test|
+      if test.class == Array
+        # Platforms, strip the non-essential initial array element
+        test = test.last
+      else
+        # No platforms
+      end
       add_test(test)
+      yield i if block_given? # For interface actions
+      i += 1
     end
     self
   end
@@ -51,29 +63,96 @@ class TestCollection
     else
       @log.debug("Unrecognized test type (#{test.class}). Not adding to collection")
     end
-
-    testcase_db_entry =  testcase.save_to_db
-    self.db_entry.add_test(testcase_db_entry)
+    @log.debug("Adding test #{testcase.external_id} to collection.")
+    self.available_platforms <<  {:id => testcase.platform_id, :name => testcase.platform_name} unless self.available_platforms.include?({:id => testcase.platform_id, :name => testcase.platform_name})
     @test_cases.push(testcase)
   end
 
-
-  # Saves this testrun
-  def save!
-    save_or_find_existing
-
-  end
-
-  def load!(opts={})
-    requirement_hook { load_from_db(opts.merge!(:plan_id => self.plan_id, :project_id =>  self.project_id)) }
-  end
-
-  def testcases
-    if @db_entry
-      @db_entry.test_cases.all
+  def find_local_features
+    # Set expected feature path
+    if Config.active_config.featurepath
+      feature_path =  Config.active_config.featurepath
     else
-      @test_cases
+      feature_path = Config.active_config.basepath + '/features/'
     end
+
+    # Find features
+    i = 0
+    self.test_cases.each do |test_case|
+      Find.find(feature_path) do |file|
+        if File.directory?(file)
+          next
+        else
+          if File.basename(file) =~ Regexp.new((Config.active_config.prefix +  test_case.external_id))
+            test_case.file = file
+            break
+          else
+            next
+          end
+        end
+      end
+      i+= 1
+    end
+    yield i if block_given? # For interface actions
+
+  end
+
+
+
+  # Saves this testrun as a serialized YAML file
+  def save!(full_file_path=nil)
+
+    if (full_file_path.nil? || full_file_path.empty?)
+      # Use defaults
+      path = Tortilla::HOME_DIR
+      base = ""
+    else
+      path =  File.dirname(full_file_path)
+      base = File.basename(full_file_path)
+
+    end
+    # Create a yaml based on our self and each testcase object for easy re-load
+    save_file_contents =  _create_yaml_from_objects
+
+    # test if file exists and all that
+    @log.debug("Saving collection to #{full_file_path}")
+    write_file(full_file_path,save_file_contents)
+
+  end
+
+
+  # Changes self instance vars to the values of those found in a previously-saved testcolelction made by 'save!'
+  def load!(full_file_path=nil)
+    if (full_file_path.nil? || full_file_path.empty?)
+      # Use defaults
+      path = Tortilla::HOME_DIR
+      base = ""
+    else
+      path =  File.dirname(full_file_path)
+      base = File.basename(full_file_path)
+    end
+    save_file_contents = YAML.load(read_file(full_file_path)).marshal_dump
+    @log.debug("Loading collection from #{full_file_path}")
+    # The save file contents are now a proper hash, so set its contents to our own instance.
+    _set_instance_vars_from_opts(save_file_contents)
+  end
+
+
+
+  def write_file(output_file_path,output_data)
+    @log.debug("Writing to #{output_file_path} ")
+    begin
+      tf = File.new(output_file_path,'w+')
+      tf.write(output_data)
+      tf.close
+    end
+    @log.debug("File written at #{output_file_path}! ")
+  end
+
+
+  def read_file(input_file_path)
+    tf = File.open(input_file_path)
+    return tf.read
   end
 
   def current_build_name
@@ -84,15 +163,16 @@ class TestCollection
     end
   end
 
+  def get_platforms
+    requirement_hook{ @testlink.get_platforms_for_testplan(self.plan_id) }
+  end
 
   # Returns true if all required vars are set
   # During the process it also sets them, so things like current_build can be evaluated from outside
   # And helpfully also
   def prepared?
     begin
-
       requirement_hook { return true }
-
     rescue ArgumentError
       return false
     end
@@ -101,6 +181,33 @@ class TestCollection
 
   ########
   private
+
+
+
+  # Creates a yaml from self instance vars
+  # In order to facilitae creating a save file, we use openstruct to generate a proper save object
+  # This is then serialized with YAML .
+  def _create_yaml_from_objects
+
+    @log.debug("Creating a Save File>")
+    save = ::OpenStruct.new
+    # We need plan, plan id, project, project id
+    ['plan','plan_id','project','project_id','available_platforms'].each do |element|
+      save.send("#{element}=", self.send(element))
+    end
+    # And the testcases
+    @log.debug("adding testcases to save...")
+    save.test_cases = []
+    self.test_cases.each do |tc|
+      save.test_cases << tc
+    end
+    @log.debug("Converting save to YAML...")
+    save =  save.to_yaml
+    @log.debug('Save conversion done <')
+    return save
+  end
+
+
   # For any remote actions to work, we require at least project and testplan
   # Therefore, we check this every single time before trying remote actions
   def requirement_hook(&block)
@@ -111,47 +218,12 @@ class TestCollection
       raise ArgumentError, "Missing some required settings. View log for details."
     end
   end
-  def load_from_db(opts={})
-    @db_entry = @db_conn.testcollection.find(:last, :conditions => {:project_id => self.project_id,:plan_id => self.plan_id}.merge(opts))
-  end
 
 
 
-  # Save current, or find an existing saved Testrun
-  def save_or_find_existing
-    record_hash = _create_collection_record
-
-    if (self.project.nil? || self.plan.nil?)
-      # Dont check for existing Testcollection if either of these is nil: its pointless, user should provide some details!
-      # Therefore, assume new
-      @log.debug("Project and/or plan is empty, assuming new collection.")
-      return @db_conn.testcollection.create_or_update(record_hash)
-    else
-      # Project and plan have values, check if one exists
-      if (existing_testcollection = TortillaDB.instance.testcollection.last(:conditions => {:project_id => self.project,:plan_id => self.plan}) )
-        puts 'found one'
-        @log.debug("Found an existing testcollection to update:  #{existing_testcollection.inspect}")
-        puts existing_testcollection.inspect
-        _set_instance_vars_from_opts(existing_testcollection.attributes)
-
-        return existing_testcollection
-        # set self == dbcon
-
-
-      else
-        @log.debug("No existing Testcollection record found, creating a new record ")
-        # projec tand plan have values, but no matching testcollection => new
-        return @db_conn.testcollection.create_or_update(record_hash)
-      end
-
-
-
-    end
-
-
-  end
 
   # The basic requirements for a TestCollection to function beyond initialisation are a testplan and testproject
+  # if these aren't set, no TL actions can be performed
   def _basic_requirements_set?
     bool = true
     [:plan,:project].each do |instance_var|
@@ -165,32 +237,17 @@ class TestCollection
     bool
   end
 
-  def _create_collection_record
-    puts 'Creating collection record'
-    record_hash = {}
-    self.instance_variables.each do |var|
-      case var
-        when '@collection','@log','@db_conn','@testlink','@db_entry','@current_build','@open_builds'
-          # dont save
-        else
-          key = var.split('@').last
-          value =  self.instance_variable_get(var)
-          record_hash[key.to_sym] = value
-      end
-    end #each
-    record_hash
-  end
 
-
+  # For each K/V pair, sets an instance variable with name K to value V
   def  _set_instance_vars_from_opts(opts)
     opts.each do |name,value|
-      puts 'NAME ' + name.inspect
-      puts 'VALUE ' + value.inspect
       self.instance_variable_set(('@' + name.to_s).to_sym,value)
     end
   end
 
 
+  # Same as   _set_instance_vars_from_opts, except for a config instead of a hash
+  # May be deprecated
   def _set_instance_vars_from_config(config)
     config.config_options.each do |config_option|
       # Only internalize relevant config options  µ
@@ -229,6 +286,10 @@ class TestCollection
     @log.debug("Remote Requirements set!!")
   end
 
+  # Make decisions based on how many open builds there are.
+  # If 0 => we can't do anything wrt test collection
+  # if = 1 => Good, just use that build
+  # if > 1, grab the first build in the array (the newest-added), but store all found open builds in self.open_builds, so user can still set self.current_build
   def _validate_open_builds
     if self.open_builds.length == 0
       raise RemoteError,"No open builds found to collect tests from. Open at least one build for current test plan!"
