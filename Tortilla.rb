@@ -13,14 +13,14 @@ module Tortilla
 
   require 'lib/helpers/testlink_wrapper'
   require 'lib/helpers/Exceptions'
-
+  require 'lib/Interface/Interface'
+  require 'lib/Interface/menus'
   require 'lib/DataBase'
   require 'lib/Config'
   require 'lib/TestCase'
   require 'lib/TestCollection'
   require 'lib/Harness'
-  require 'lib/Interface/Interface'
-  require 'lib/Interface/menus'
+
 
   require 'lib/System'
 

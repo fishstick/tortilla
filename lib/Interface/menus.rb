@@ -1,4 +1,4 @@
-class Interface
+module Interface
   # Highline Menus and user interface flow
   module Menus
 
@@ -37,7 +37,7 @@ class Interface
         else
           config_name = config.name
         end
-        # 'self' in this context refers to Harness, where this module is extended
+                                      # 'self' in this context refers to Harness, where this module is extended
         puts @cli.show_header({:config => config_name,:testplan => self.plan,:testproject => self.project,:build => self.current_build_name  })
         self.send(menu_name)
         @cli.crumb_del(display_name)
@@ -99,7 +99,7 @@ class Interface
     def configure_tortilla_menu
       found = Dir.glob(Dir.pwd + '/*.conf')
       if found.length > 1
-       # multiple
+        # multiple
         @cli.choose do |menu|
           menu.index = :number
           menu.layout = :list
@@ -208,7 +208,59 @@ class Interface
 
       @test_collection.load!(file_path)
 
+      puts 'TestCollection loaded!'
+      sleep 1
+
     end
+
+
+
+    def start_a_testrun_menu
+      # Start a loaded testcoll
+      # Validate
+      # => Test if @testcollection is loaded
+      # => test if @testcollection.test_cases is not empty
+      # ===> if they are,  load_a_saved_testcollection_menu
+
+      if @test_collection.test_cases.empty?
+        # 2 possible cases
+        # => There is already a saved one we can use
+        @cli.say("No loaded tests found!")
+        if @cli.agree('Have you already selected/created a testcollection?')
+          open_menu('Load a Saved Testcollection')
+        else
+          # => User hasnt picked a new one yet
+          open_menu('Select a new Testcollection')
+        end
+      else
+        # Not an empty collection, continue with run
+
+        puts 'start a testrun'
+        sleep 1
+        #puts @test_collection.inspect
+        puts 'AVAIL: '
+        puts @test_collection.available_platforms.inspect
+
+
+        if @test_collection.available_platforms.length > 1
+          # More than one platform is available, make user choose action for each
+          open_menu('platforms')
+        end
+
+
+
+
+
+
+
+        #do_testrun # a Harness function
+
+
+      end
+
+    end
+
+
 
 
 
@@ -217,9 +269,55 @@ class Interface
       puts "EL PLATYFORMOSOS"
       puts @test_collection.available_platforms
       sleep 5
+      puts 'ACT: '
+      puts @test_collection.active_platforms.inspect
 
-      @test_collection.available_platforms.each do  |platform_hash|
+      @test_collection.available_platforms.each do |platform_hash|
+        puts 'PLATFORMHASH'
+        puts platform_hash.inspect
+
+        puts @cli.cli_say("There are multiple available platforms. Choose an appropriate action for each one")
+
+
+        choose do |menu|
+          menu.index        = :number
+          menu.index_suffix = ") "
+          menu.prompt = "Choose action for platform #{platform_hash[:name]}: "
+
+          menu.choice "Skip platform" do
+            puts @cli.cli_say("=> Skipping platform...")
+            platform_client = ""
+          end
+
+
+          menu.choice "Run on localhost" do
+            platform_client = 'local'
+            puts @cli.cli_say("=> Set #{platform_hash[:name]} to run on host #{platform_client}")
+            @test_collection.active_platforms.push(platform_hash)
+
+          end
+
+          menu.choice "Run on Remote host" do
+            platform_client = ask("Enter Remote client IP or Host for platform #{platform_hash[:name]}")
+
+            # validate?
+            puts @cli.cli_say("=> Set #{platform_hash[:name]} to run on host #{platform_client}.")
+            @test_collection.active_platforms.push(platform_hash)
+
+          end
+
+
+        end
+
+
+
+
       end
+
+      puts 'CLIENT'
+
+      puts "ACTIVEPLATS:"
+      puts @test_collection.active_platforms.inspect
     end
 
 
@@ -250,11 +348,11 @@ class Interface
     #####################################""
     # TEST RELATED
     def tests_menu()
-      @test_collection.test_cases
+      #@test_collection.test_cases
       @num_tests =  @test_collection.test_cases.length
 
       @cli.msg_box("
-    Found #{@num_tests} tests for current build #{@test_collection.current_build_name}!
+    Found #{@num_tests} tests for current build #{@test_collection.current_build_name}, over #{@test_collection.available_platforms.length} platforms!
 
 ")
       @cli.choose do |menu|
@@ -279,11 +377,30 @@ class Interface
 
     def save_test_collection_menu
       # Save TC
+
       find_local_features  do |i|
         #puts "Found feature file for #{i}"
-
+        @num_local = i
         @cli.msg_box(" Found #{i} matching local files for #{@num_tests} remote tests!")
       end
+      #puts 'AVAIL: '
+      #puts @test_collection.available_platforms
+      #puts 'ACT: '
+      #puts @test_collection.active_platforms
+
+      if  @num_local != @num_tests
+
+      end
+
+      # Find local features doesnt guarantee all tests actually have local files, it only updates the testcases for thsoe that DO have any files
+      # and Since we should only save those that have matching files
+      # We remove the testcases which have no linked loca files
+
+
+      # If theres f
+      @test_collection.remove_unlinked_tests
+
+
       file_path =   @cli.ask("Enter path/filename to save testcollection to ")do  |q|
         q.default = "./tests.torti"
       end
@@ -335,7 +452,6 @@ class Interface
       end
 
     end
-
 
 
     def _generate_config

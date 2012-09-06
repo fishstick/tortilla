@@ -2,14 +2,12 @@
 # Harness is the top-most layer of Tortilla, enveloping all other Data structures such as TestCase, Config and Testcollection
 # It provides public methods that use the lowerlying datastructures in order to provide a single point of reference
 
-# TODO: Figure out a way to determine default Config name
-
-
 
 class Harness
   attr_accessor :test_collection,:config,:cli,:testlink
-
   include Exceptions
+  include Interface::Menus
+
 
   # A new Harness object
 
@@ -18,10 +16,12 @@ class Harness
     unless config_name.nil?
       load_config(config_name)
       set_requirements
-
     end
-    @cli = Interface.new
-    self.extend(Interface::Menus)  # extend  with all the Menus for selecting, so they don't pollute the class here
+    @cli = Interface::Display.new
+
+    # TODO: Menus should be in interface, but it uses a lot of vars that are part of Harness...
+    # Such as as testplanetc,.. We need to find a way to propagate the current Harness status to @cli, constantly
+    #self.extend(Interface::Menus)
   end
 
 
@@ -33,8 +33,8 @@ class Harness
   end
 
   def load_config(config_name)
-   @config = Config::open_and_parse(config_name)
-   set_requirements
+    @config = Config::open_and_parse(config_name)
+    set_requirements
   end
 
 
@@ -79,10 +79,11 @@ class Harness
   # main routine
   def main
     loop do
+
       if self.config.nil?
         open_menu('Configure Tortilla')
       else
-        open_menu('Main')
+        open_menu('Main',{:config => self.config})
       end
 
     end
@@ -126,6 +127,78 @@ class Harness
 
 
 
+  # TODO:
+  # - Plugin system => for example, inject vmware_prep methods somehow
+  #
+
+  def do_testrun
+    @test_collection.test_cases.each do |testcase|
+      puts 'A TESTCASE'
+      #testcase.file can be empty!!
+      puts testcase.file
+
+
+
+
+    end
+
+    System.cuke
+    #$log.info("Found #{testinfo[:number_of_tests].to_s} tests to run")
+    #URGENCIES.each do |urgency|
+    #  testinfo[:tests][urgency].each_value do |item|
+    #    puts File.basename(item[:file])
+    #  end
+    #end
+
+    #put_ok("Continue with these tests?")
+    #unless agree("Y/N") then
+    #  put_nok("Exiting at user request.")
+    #  exit
+    #end
+    #if @configfile['reset'] && @configfile['vm_master_configuration'] then
+    #  raise ArgumentError,"vm_machine was not specified in config file!" unless @configfile['vm_machine']
+    #  put_ok("Preparing clone of master vmware image")
+    #  ENV['VATF_LOGDIR'] = @outputdir
+    #  prep_vmware_image(true)
+    #end
+    #puts ""
+    #put_ok("TESTING IN PROGRESS")
+    #@outputdir += testinfo[:build].downcase + "_" +  Time.now.strftime("%d%m_%H%M") + '/'
+    #copy_pickle_file
+    #write_lastrun_file
+    #load_plugins(:global)
+    #pbar = ProgressBar.new( testinfo[:number_of_tests],:counter,:bar,:elapsed )
+    #URGENCIES.each do |urgency|
+    #  testinfo[:tests][urgency].each do |exid,tc|
+    #
+    #    testinfo[:testplan_platforms].keys.each do |plat|
+    #      $log.debug("Running testcase #{exid} for platform #{plat}")
+    #      update_dir(exid,plat)
+    #      load_plugins(:test)
+    #      ENV['RESULTDIR'] = @resultdir
+    #      pbar.increment!
+    #      browser=plat.gsub(/^(.*)[_-](.*)$/,'\1').downcase
+    #      system("#{@cukebin} -A -C #{@config_location} -b #{browser} -c #{testinfo[:testplan_platforms][plat][:client]} -l #{@resultdir} -o #{@resultfile} -h #{@testhost} \'#{tc[:file].chomp}\'")
+    #      parse_results_from_html # parse results and write into a txt as well
+    #      revert_vmware_image if @vm_current_config
+    #    end
+    #
+    #
+    #  end # each  test
+    #end #each urgency
+    #put_ok("TESTS COMPLETED!")
+    #put_ok("Run 'canner' to review and report results.")
+    #
+    #rotate_vatflog
+    #notify_by_mail({:to => @configfile['smtp_recipient'], :host => @configfile['smtp_host'], :type => :testrun_complete}) if @mail
+
+
+
+  end
+
+
+
+
 
   private
   # Test whether sub-requirements are set
@@ -141,6 +214,27 @@ class Harness
       @log.warn(msg)
     end
   end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

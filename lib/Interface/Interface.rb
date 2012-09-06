@@ -2,7 +2,9 @@
 
 # Non- menu related Interface methods
 # coloured puts, message boxes, hjeaders, breadcrumbs, etc.
-class Interface
+module Interface
+
+class Display
   require 'highline/import'
 
   def initialize
@@ -23,11 +25,6 @@ class Interface
     return ::HighLine.new.color(string,colorscheme)
   end
 
-  ## wraps text with a newline after +col+
-  #def wrap_text(txt, col = 50)
-  #  txt.gsub(/(.{1,#{col}})( +|$)\n?|(.{#{col}})/,
-  #           "\\1\\3\n ")
-  #end
 
 
   def msg_box(msg)
@@ -131,6 +128,6 @@ end # class
 
 
 
-
+end
 
 

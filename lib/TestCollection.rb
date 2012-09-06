@@ -39,16 +39,26 @@ class TestCollection
   end
 
   def fetch_and_add_testcases
+
+    #puts 'TESPLATS!'
+    #puts get_platforms
+
     @log.debug("Fetch and Add testcases!")
     i = 1
+
+
     fetch_remote.each do |test|
-      if test.class == Array
-        # Platforms, strip the non-essential initial array element
-        test = test.last
+      # Test is a hash that should have at least 1 k/v pair
+      # Keyed by the platform_id
+      if test.length > 1
+        test.each do |platform_id,testcase_info|
+          add_test(testcase_info)
+        end
       else
-        # No platforms
-      end
-      add_test(test)
+        raise RuntimeError,"I dont know what to do with myself: tests.length < 1"
+
+      end # testlength  > 1
+
       yield i if block_given? # For interface actions
       i += 1
     end
@@ -63,7 +73,10 @@ class TestCollection
     else
       @log.debug("Unrecognized test type (#{test.class}). Not adding to collection")
     end
-    @log.debug("Adding test #{testcase.external_id} to collection.")
+    # We pull ALL testcases, and then evaluate if theyre going to be run wrt platforms
+
+    @log.debug("testcase#{ testcase.external_id} has paltforms#{ testcase.platforms}")
+    @log.debug("Adding test #{testcase.external_id} to collection for platform  #{testcase.platform_name}.")
     self.available_platforms <<  {:id => testcase.platform_id, :name => testcase.platform_name} unless self.available_platforms.include?({:id => testcase.platform_id, :name => testcase.platform_name})
     @test_cases.push(testcase)
   end
@@ -78,6 +91,7 @@ class TestCollection
 
     # Find features
     i = 0
+    found = 0
     self.test_cases.each do |test_case|
       Find.find(feature_path) do |file|
         if File.directory?(file)
@@ -85,6 +99,7 @@ class TestCollection
         else
           if File.basename(file) =~ Regexp.new((Config.active_config.prefix +  test_case.external_id))
             test_case.file = file
+            found +=1
             break
           else
             next
@@ -93,10 +108,26 @@ class TestCollection
       end
       i+= 1
     end
-    yield i if block_given? # For interface actions
+    yield found if block_given? # For interface actions
 
   end
 
+  # Remove tests from the collection that have no matching local file
+  # This is used prior to saving
+  # Or maybe prior to running?
+  # TODO
+  def remove_unlinked_tests
+    @test_cases.each do |testcase|
+      remove_test(testcase)   if (testcase.file.nil? || testcase.file.empty?)
+    end
+  end
+
+
+  # Remove an existing testcase from the test collection
+  def remove_test(test_case)
+    @log.debug("Removing testcase #{test_case.name} from collection")
+    @test_cases.delete_at(@test_cases.index(test_case))
+  end
 
 
   # Saves this testrun as a serialized YAML file
@@ -265,6 +296,7 @@ class TestCollection
 
   # Sets and validates remote requirements based on given basic requiremetns (specifically: self.project and self.plan)
   # based on the basic requirements (plan name and project name), we determine their IDs and any builds related to those projects
+  # Because of the ORM model, we do this EVERY time, as the plan and/or project may have changed, and an unsynced ORM is a terrible thing.
   # Because of the ORM model, we do this EVERY time, as the plan and/or project may have changed, and an unsynced ORM is a terrible thing.
   def _set_remote_requirements
     @log.debug("Attempting to set remote requirements >")
