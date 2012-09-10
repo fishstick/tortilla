@@ -17,6 +17,7 @@ class Display
     end
     HighLine.color_scheme = ft
     @crumb = []
+    @log = Logger.new(Tortilla::DEV_LOG)
   end
 
 

@@ -234,26 +234,21 @@ module Interface
         end
       else
         # Not an empty collection, continue with run
-
-        puts 'start a testrun'
-        sleep 1
-        #puts @test_collection.inspect
-        puts 'AVAIL: '
-        puts @test_collection.available_platforms.inspect
-
-
         if @test_collection.available_platforms.length > 1
           # More than one platform is available, make user choose action for each
+          @log.debug("More than one platform was available, letting user pick active platforms for testing")
           open_menu('platforms')
         end
 
+        # At this point platforms are selected, so we should probably do our testrun now
 
 
 
 
 
 
-        #do_testrun # a Harness function
+
+        do_testrun # a Harness function
 
 
       end
@@ -263,19 +258,11 @@ module Interface
 
 
 
-
+    # For each AVAILABLE platform, choose the ACTIVE ones
     def platforms_menu
-      # For each AVAILABLE platform, choose the ACTIVE ones
-      puts "EL PLATYFORMOSOS"
-      puts @test_collection.available_platforms
-      sleep 5
-      puts 'ACT: '
-      puts @test_collection.active_platforms.inspect
+      @log.debug("Available platforms:  #{@test_collection.available_platforms.inspect}")
 
       @test_collection.available_platforms.each do |platform_hash|
-        puts 'PLATFORMHASH'
-        puts platform_hash.inspect
-
         puts @cli.cli_say("There are multiple available platforms. Choose an appropriate action for each one")
 
 
@@ -293,6 +280,7 @@ module Interface
           menu.choice "Run on localhost" do
             platform_client = 'local'
             puts @cli.cli_say("=> Set #{platform_hash[:name]} to run on host #{platform_client}")
+            @log.debug("Added active platform:  #{platform_hash.inspect}")
             @test_collection.active_platforms.push(platform_hash)
 
           end
@@ -302,6 +290,7 @@ module Interface
 
             # validate?
             puts @cli.cli_say("=> Set #{platform_hash[:name]} to run on host #{platform_client}.")
+            @log.debug("Added active platform:  #{platform_hash.inspect}")
             @test_collection.active_platforms.push(platform_hash)
 
           end
@@ -309,15 +298,9 @@ module Interface
 
         end
 
-
-
-
       end
 
-      puts 'CLIENT'
 
-      puts "ACTIVEPLATS:"
-      puts @test_collection.active_platforms.inspect
     end
 
 
@@ -383,10 +366,7 @@ module Interface
         @num_local = i
         @cli.msg_box(" Found #{i} matching local files for #{@num_tests} remote tests!")
       end
-      #puts 'AVAIL: '
-      #puts @test_collection.available_platforms
-      #puts 'ACT: '
-      #puts @test_collection.active_platforms
+      @test_collection.remove_unlinked_tests
 
       if  @num_local != @num_tests
 
@@ -398,7 +378,9 @@ module Interface
 
 
       # If theres f
-      @test_collection.remove_unlinked_tests
+
+
+      sleep 20
 
 
       file_path =   @cli.ask("Enter path/filename to save testcollection to ")do  |q|

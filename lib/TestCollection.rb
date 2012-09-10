@@ -117,17 +117,15 @@ class TestCollection
   # Or maybe prior to running?
   # TODO
   def remove_unlinked_tests
-    @test_cases.each do |testcase|
-      remove_test(testcase)   if (testcase.file.nil? || testcase.file.empty?)
+    self.test_cases.delete_if do |testcase|
+      (testcase.file.nil? || testcase.file.empty?)
     end
+
+    @log.debug("#{self.test_cases.length.to_s} tests left in collection after removal of unlinked cases")
+
   end
 
 
-  # Remove an existing testcase from the test collection
-  def remove_test(test_case)
-    @log.debug("Removing testcase #{test_case.name} from collection")
-    @test_cases.delete_at(@test_cases.index(test_case))
-  end
 
 
   # Saves this testrun as a serialized YAML file
