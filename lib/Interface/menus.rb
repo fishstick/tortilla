@@ -172,7 +172,6 @@ module Interface
     def select_a_new_testcollection_menu
       # First we select projects
 
-
       open_menu('Projects')
 
       # Then our plans, based on project

@@ -138,7 +138,7 @@ class Harness
       puts "RUNNING TEST #{test.external_id}"
       puts 'file'
       puts test.file
-      System.cuke(test.file)
+      System::Bin.run(test.file)
 
     end
     exit
