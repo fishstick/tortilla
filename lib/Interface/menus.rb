@@ -164,12 +164,15 @@ module Interface
 
     def exit_tortilla_menu
       exit
+      exit
     end
 
 
     # Wrapper menu around actions requried for creating a new testcollection
     def select_a_new_testcollection_menu
       # First we select projects
+
+
       open_menu('Projects')
 
       # Then our plans, based on project
@@ -241,14 +244,8 @@ module Interface
         end
 
         # At this point platforms are selected, so we should probably do our testrun now
-
-
-
-
-
-
-
-        do_testrun # a Harness function
+        # We select only the active tests (as defined by active_platforms) from our testcollection
+        do_testrun(@test_collection.select_active_tests) # a Harness function
 
 
       end
@@ -298,7 +295,10 @@ module Interface
 
         end
 
-      end
+      end   # Each available paltforms
+
+
+
 
 
     end
@@ -361,26 +361,18 @@ module Interface
     def save_test_collection_menu
       # Save TC
 
+      # TODO:
+      # Add suggestion/help/warning when num_local = 0
+      # eg: check prefix, feature path
+      # and add re-find option
       find_local_features  do |i|
-        #puts "Found feature file for #{i}"
         @num_local = i
         @cli.msg_box(" Found #{i} matching local files for #{@num_tests} remote tests!")
       end
-      @test_collection.remove_unlinked_tests
-
-      if  @num_local != @num_tests
-
-      end
-
       # Find local features doesnt guarantee all tests actually have local files, it only updates the testcases for thsoe that DO have any files
       # and Since we should only save those that have matching files
       # We remove the testcases which have no linked loca files
-
-
-      # If theres f
-
-
-      sleep 20
+      @test_collection.remove_unlinked_tests
 
 
       file_path =   @cli.ask("Enter path/filename to save testcollection to ")do  |q|

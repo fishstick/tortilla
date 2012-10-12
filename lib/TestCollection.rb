@@ -50,11 +50,15 @@ class TestCollection
     fetch_remote.each do |test|
       # Test is a hash that should have at least 1 k/v pair
       # Keyed by the platform_id
-      if test.length > 1
+      # Length 1 means only one active platform
+      # Length > 1 means multiple platforms
+      if test.length >= 1
         test.each do |platform_id,testcase_info|
           add_test(testcase_info)
         end
       else
+        puts 'test inspect:'
+        puts test.inspect
         raise RuntimeError,"I dont know what to do with myself: tests.length < 1"
 
       end # testlength  > 1
@@ -81,6 +85,27 @@ class TestCollection
     @test_cases.push(testcase)
   end
 
+
+  # Returns from entire testcollection only the tests that have platforms in @testcollection.active_platforms
+  def select_active_tests
+    to_run = []
+    # platforms are always in an array, even if it is only one hash:
+    #[{:name=>"firefox", :id=>"361"}, {:name=>"chrome", :id=>"494"}]
+    self.active_platforms.each do |platform_hash|
+      self.test_cases.select do |testcase|
+        # We don't need to check for duplicates since it's already seperated by platforms and TC objects are unique:
+        # testcase example:
+        # #<TestCase:0x2889418 @external_id="2386", @platform_id="361", @name="MDC Email settings", @urgency="2", @tl_props={:execution_run_type=>2, :exec_status=>"p", :type=>1, :user_id=>105, :priority=>4, :executed=>76121, :exec_on_build=>978, :tsuite_name=>"E-mail delivery", :status=>1, :assigned_build_id=>575, :execution_order=>10, :execution_ts=>"2012-09-11 06:39:00", :testsuite_id=>17548, :z=>1, :exec_id=>53615, :tcversion_number=>3, :tester_id=>105, :feature_id=>64925, :importance=>2, :exec_on_tplan=>75184, :linked_by=>5, :tcversion_id=>76121, :version=>3, :execution_notes=>"", :linked_ts=>"2012-01-19 16:33:46", :active=>1, :assigner_id=>99}, @execution_type="2", @file="/home/bme/projects/vasco/id_qc//features/Config tool/Identikey settings/MDC settings/E-mail delivery/id2386_mdc_email_settings.feature", @tc_id="17553", @platform_name="firefox">
+        to_run << testcase if testcase.platform_id == platform_hash[:id]
+      end
+    end  # each platform
+    # to_run array now contains the testcase object of all tests that:
+    # - have local files (fetch_and_add made sure of this)
+    # - should be run on at least one platform
+    return to_run
+  end
+
+
   def find_local_features
     # Set expected feature path
     if Config.active_config.featurepath
@@ -88,7 +113,7 @@ class TestCollection
     else
       feature_path = Config.active_config.basepath + '/features/'
     end
-
+    @log.debug("Looking for features in #{feature_path}")
     # Find features
     i = 0
     found = 0
@@ -98,6 +123,7 @@ class TestCollection
           next
         else
           if File.basename(file) =~ Regexp.new((Config.active_config.prefix +  test_case.external_id))
+            @log.debug("Found a matching local file for testcase #{test_case.external_id}")
             test_case.file = file
             found +=1
             break

@@ -1,6 +1,5 @@
 module Tortilla
   require 'rubygems'
-  require 'sqlite3'
   require 'logger'
   require 'singleton'
   require 'sys/uname'
@@ -15,7 +14,6 @@ module Tortilla
   require 'lib/helpers/Exceptions'
   require 'lib/Interface/Interface'
   require 'lib/Interface/menus'
-  require 'lib/DataBase'
   require 'lib/Config'
   require 'lib/TestCase'
   require 'lib/TestCollection'

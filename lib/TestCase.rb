@@ -6,7 +6,7 @@
 
 
 class TestCase
-  attr_accessor :urgency,:file,:external_id,:internal_id,:platforms,:tl_props ,:name
+  attr_accessor :urgency,:file,:external_id,:internal_id,:platforms,:tl_props ,:name, :platform_id
 
   # Create a new TestCase object
   # If a testhash is provided, testcase object is immediately completed, otherwise properties can be set manually.
@@ -49,6 +49,9 @@ class TestCase
     @tl_props.delete(:run_status)
   end
 
+  # Of all testlink propterties, get the ones we have defined (and are useful)
+  # And seperate them from 'other' tl properties
+  # then make attribiute_reader methods for them
   def set_tl_properties
     @tl_props.each do |property,value|
       if (self.instance_variable_defined?(('@' + property.to_s))  && self.instance_variable_get(('@' + property.to_s)) == nil)     # is it an internal property we map 1:1  and don't have yet

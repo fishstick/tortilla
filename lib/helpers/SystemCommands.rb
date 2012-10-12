@@ -1,9 +1,8 @@
-class SystemCommands
-  def initialize
-    @optionmap = {:require => ' -r ',:outputdir => ' -o ',:format => ' --format '}
-    @bin = "/usr/bin/env cucumber "
-    @os = determine_os
-  end
+module SystemCommands
+  OPTIONMAP =  {:require => ' -r ',:outputdir => ' -o ',:format => ' --format '}
+  @@bin = "/usr/bin/env cucumber "
+
+
 #outputdir
 # format (html/human)
 #  opts.on('-b', '--browser BROWSER', "Browser to run tests in") do |browser|
@@ -18,9 +17,9 @@ class SystemCommands
 
 
   # ex: add_option :require => '/support/env.Rb'
-  def add_options(option_hash)
+  def set_options_from_hash(option_hash)
     option_hash.each_pair do |option_name,option_value|
-      @bin << OPTIONMAP[option_name] + option_value
+      @@bin << OPTIONMAP[option_name] + option_value
     end
   end
 

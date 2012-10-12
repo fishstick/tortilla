@@ -127,22 +127,21 @@ class Harness
 
 
 
+
+  # Starts a testrun of a given array of TestCase objects
   # TODO:
   # - Plugin system => for example, inject vmware_prep methods somehow
-  #
+  # - Dont fix self on cuke, make binary/method independant of cuke
+  def do_testrun(test_array)
 
-  def do_testrun
-    @test_collection.test_cases.each do |testcase|
-      puts 'A TESTCASE'
-      #testcase.file can be empty!!
-      puts testcase.file
-
-
-
+    test_array.each do |test|
+      puts "RUNNING TEST #{test.external_id}"
+      puts 'file'
+      puts test.file
+      System.cuke(test.file)
 
     end
-
-    System.cuke
+    exit
     #$log.info("Found #{testinfo[:number_of_tests].to_s} tests to run")
     #URGENCIES.each do |urgency|
     #  testinfo[:tests][urgency].each_value do |item|
