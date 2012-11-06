@@ -42,6 +42,12 @@ As such, Tortilla is **very** early stage and not for production use.
 * Result parsing
 
 
+=== KNOWN ISSUES/To check
+* Builds are not saved properly to a tortilla file... We can:
+ 1) Ask build at startup? (More intensive, maybe not as obv...)
+ 2) Save build in .torti file (Easiest, most obvious)
+
+
 
 == Contributing to Tortilla
  

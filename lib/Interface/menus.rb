@@ -39,7 +39,11 @@ module Interface
         end
                                       # 'self' in this context refers to Harness, where this module is extended
         puts @cli.show_header({:config => config_name,:testplan => self.plan,:testproject => self.project,:build => self.current_build_name  })
+
+        # Open the actual menu
         self.send(menu_name)
+
+
         @cli.crumb_del(display_name)
       else
         # an unknown  menu: probably a Dev error
@@ -152,6 +156,7 @@ module Interface
       @cli.choose do |menu|
         menu.index = :number
         menu.layout = :list
+        menu.flow = :columns_down
         MM_ACTIONS.each do |action|
           menu.choice(action)   { |choice|
             open_menu(choice)

@@ -162,10 +162,10 @@ class TestCollection
       path = Tortilla::HOME_DIR
       base = ""
     else
-      path =  File.dirname(full_file_path)
+      path = File.dirname(full_file_path)
       base = File.basename(full_file_path)
-
     end
+
     # Create a yaml based on our self and each testcase object for easy re-load
     save_file_contents =  _create_yaml_from_objects
 
@@ -321,7 +321,6 @@ class TestCollection
   # Sets and validates remote requirements based on given basic requiremetns (specifically: self.project and self.plan)
   # based on the basic requirements (plan name and project name), we determine their IDs and any builds related to those projects
   # Because of the ORM model, we do this EVERY time, as the plan and/or project may have changed, and an unsynced ORM is a terrible thing.
-  # Because of the ORM model, we do this EVERY time, as the plan and/or project may have changed, and an unsynced ORM is a terrible thing.
   def _set_remote_requirements
     @log.debug("Attempting to set remote requirements >")
 
@@ -347,6 +346,7 @@ class TestCollection
   # if = 1 => Good, just use that build
   # if > 1, grab the first build in the array (the newest-added), but store all found open builds in self.open_builds, so user can still set self.current_build
   def _validate_open_builds
+    @log.debug('Validating open builds')
     if self.open_builds.length == 0
       raise RemoteError,"No open builds found to collect tests from. Open at least one build for current test plan!"
     elsif self.open_builds.length == 1
@@ -357,8 +357,7 @@ class TestCollection
       # Pick newest, but warn
       # Should be toggle-able behaviour probably
       if self.current_build
-        @log.warn("Multiple builds found, but already have a current_build set (#{self.current_build_name}) - not overwriting!")
-
+        @log.warn("Multiple builds found, but already have a current_build set (#{self.current_build_name}) - not automatically overwriting!")
       else
         @log.debug("Found multiple builds, current build not set: using most recent build in list.")
         self.current_build = self.open_builds.first
