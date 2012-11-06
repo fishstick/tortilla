@@ -22,11 +22,24 @@ As such, Tortilla is **very** early stage and not for production use.
 4.  Tortilla runs testcases using cucumber and parses fail/skip/success results which are saved
 5.  After user intervention, Tortilla uploads testcase execution results and any generated files (failure screenshots, ..) to TestLink
 
+=== Current functionality (updated Nov. 6)
+
+* Pulling tests and converting them to TestCase objects inside a TestCollection
+* Saving a TestCollection with TestCase objects to a .torti file
+* Starting a testrun from a pull, or from a saved torti file
+* Flow if main() is started with config (Look for 'nearby' config files)
+
+
+
 
 === TODO Checklist
-==== Config
-* Test general usage: Create, Read, Update, Delete
-* Proper return messages, hide db interface as much as possible
+* Help system (Maybe always catch F1 to give info relevant to current menu?)
+* Filepicker-type mechanic for config picking rather than having to give full path
+* Add tests
+* Add binaries
+* Add option/way of allowing some other binary and test setup to be used other than matching prefixes (eg: someone using a different framework than cucumber features)
+* Mailer module
+* Result parsing
 
 
 
