@@ -32,13 +32,13 @@ As such, Tortilla is **very** early stage and not for production use.
 
 
 
-=== TODO Checklist
-* Help system (Maybe always catch F1 to give info relevant to current menu?)
+=== TODO Checklist/Wishlist
 * Filepicker-type mechanic for config picking rather than having to give full path
 * Add tests
 * Add binaries
 * Add option/way of allowing some other binary and test setup to be used other than matching prefixes (eg: someone using a different framework than cucumber features)
 * Mailer module
+* Define public/private methods for API usage
 * Result parsing
 
 
