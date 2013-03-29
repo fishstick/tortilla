@@ -92,7 +92,7 @@ class TestCollection
   # Force can be set to true to avoid a check whether or not at least one platform is set. Forcing in such a case would mean the testcollection would be emptied of cases
   def remove_inactive_tests(force=false)
     (raise TortillaError,"No active platforms - this would remove ALL testcases!"  if self.active_platforms.length == 0) unless force==true
-    self.test_cases = _select_active_tests
+    @test_cases = _select_active_tests
   end
 
 
