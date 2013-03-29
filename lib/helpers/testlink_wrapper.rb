@@ -132,8 +132,9 @@ class TestlinkWrapper
     test_cases = find_open_testcases(test_collection.plan_id,(test_collection.current_build[:id] || test_collection.open_builds.first[:id]))
     all = []
     test_cases.each do |test_case_hash|
+      tc = test_case_hash.values.first # Strip off first key
       @log.debug("LIST TESTCASE - A testcase: #{test_case_hash.inspect}")
-      all << {test_case_hash['external_id'] => test_case_hash['name'] }
+      all << { tc[:external_id] =>  tc[:name] }   # TODO: Use symbols
     end
     all
   end

@@ -1,7 +1,7 @@
 
 # Deals with opening and parsing a configfile
 # Also provides some utility methods to determine which is the currently active config or if a certain option was provided
-module Config
+module TortillaConfig
 
   # Minimum options required. If any of them is not given, croak
   REQUIRED_OPTS = [:testlink_server,:dev_key,:prefix]
@@ -83,11 +83,11 @@ module Config
         else
           raise RuntimeError,"I just don't know what to do with myself, this type of COnfig IS ALL WRONG (expected string or Array)'"
       end
-      $log.debug("Exposing keys:#{ public.inspect}")
+      #$log.debug("Exposing keys:#{ public.inspect}")
       # Each listed key in public, set as an ENV variable with the value from the config
       public.each { |key| ENV[key.to_s.upcase]  = hash[key]  }
     else  # No public options defined
-      $log.debug("No public options defined, not exposing anything.")
+      #$log.debug("No public options defined, not exposing anything.")
     end # has key public?
   end
 

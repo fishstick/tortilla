@@ -40,9 +40,6 @@ class TestCollection
 
   def fetch_and_add_testcases
 
-    #puts 'TESPLATS!'
-    #puts get_platforms
-
     @log.debug("Fetch and Add testcases!")
     i = 1
 
@@ -86,24 +83,18 @@ class TestCollection
   end
 
 
-  # Returns from entire testcollection only the tests that have platforms in @testcollection.active_platforms
-  def select_active_tests
-    to_run = []
-    # platforms are always in an array, even if it is only one hash:
-    #[{:name=>"firefox", :id=>"361"}, {:name=>"chrome", :id=>"494"}]
-    self.active_platforms.each do |platform_hash|
-      self.test_cases.select do |testcase|
-        # We don't need to check for duplicates since it's already seperated by platforms and TC objects are unique:
-        # testcase example:
-        # #<TestCase:0x2889418 @external_id="2386", @platform_id="361", @name="MDC Email settings", @urgency="2", @tl_props={:execution_run_type=>2, :exec_status=>"p", :type=>1, :user_id=>105, :priority=>4, :executed=>76121, :exec_on_build=>978, :tsuite_name=>"E-mail delivery", :status=>1, :assigned_build_id=>575, :execution_order=>10, :execution_ts=>"2012-09-11 06:39:00", :testsuite_id=>17548, :z=>1, :exec_id=>53615, :tcversion_number=>3, :tester_id=>105, :feature_id=>64925, :importance=>2, :exec_on_tplan=>75184, :linked_by=>5, :tcversion_id=>76121, :version=>3, :execution_notes=>"", :linked_ts=>"2012-01-19 16:33:46", :active=>1, :assigner_id=>99}, @execution_type="2", @file="/home/bme/projects/vasco/id_qc//features/Config tool/Identikey settings/MDC settings/E-mail delivery/id2386_mdc_email_settings.feature", @tc_id="17553", @platform_name="firefox">
-        to_run << testcase if testcase.platform_id == platform_hash[:id]
-      end
-    end  # each platform
-    # to_run array now contains the testcase object of all tests that:
-    # - have local files (fetch_and_add made sure of this)
-    # - should be run on at least one platform
-    return to_run
+  # Returns from entire testcollection only the tests that have an active platforms in @testcollection.active_platforms
+  def active_tests?
+    _select_active_tests
   end
+
+  # Sets the entire testcollection to only contain testcases that have active paltforms assigned
+  # Force can be set to true to avoid a check whether or not at least one platform is set. Forcing in such a case would mean the testcollection would be emptied of cases
+  def remove_inactive_tests(force=false)
+    (raise TortillaError,"No active platforms - this would remove ALL testcases!"  if self.active_platforms.length == 0) unless force==true
+    self.test_cases = _select_active_tests
+  end
+
 
 
   def find_local_features
@@ -237,7 +228,24 @@ class TestCollection
   ########
   private
 
-
+  # TODO Make this private
+  def _select_active_tests
+    to_run = []
+    # platforms are always in an array, even if it is only one hash:
+    #[{:name=>"firefox", :id=>"361"}, {:name=>"chrome", :id=>"494"}]
+    self.active_platforms.each do |platform_hash|
+      self.test_cases.select do |testcase|
+        # We don't need to check for duplicates since it's already seperated by platforms and TC objects are unique:
+        # testcase example:
+        # #<TestCase:0x2889418 @external_id="2386", @platform_id="361", @name="MDC Email settings", @urgency="2", @tl_props={:execution_run_type=>2, :exec_status=>"p", :type=>1, :user_id=>105, :priority=>4, :executed=>76121, :exec_on_build=>978, :tsuite_name=>"E-mail delivery", :status=>1, :assigned_build_id=>575, :execution_order=>10, :execution_ts=>"2012-09-11 06:39:00", :testsuite_id=>17548, :z=>1, :exec_id=>53615, :tcversion_number=>3, :tester_id=>105, :feature_id=>64925, :importance=>2, :exec_on_tplan=>75184, :linked_by=>5, :tcversion_id=>76121, :version=>3, :execution_notes=>"", :linked_ts=>"2012-01-19 16:33:46", :active=>1, :assigner_id=>99}, @execution_type="2", @file="/home/bme/projects/vasco/id_qc//features/Config tool/Identikey settings/MDC settings/E-mail delivery/id2386_mdc_email_settings.feature", @tc_id="17553", @platform_name="firefox">
+        to_run << testcase if testcase.platform_id == platform_hash[:id]
+      end
+    end  # each platform
+    # to_run array now contains the testcase object of all tests that:
+    # - have local files (fetch_and_add made sure of this)
+    # - should be run on at least one platform
+    return to_run
+  end
 
   # Creates a yaml from self instance vars
   # In order to facilitae creating a save file, we use openstruct to generate a proper save object

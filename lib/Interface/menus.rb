@@ -249,7 +249,7 @@ module Interface
 
         # At this point platforms are selected, so we should probably do our testrun now
         # We select only the active tests (as defined by active_platforms) from our testcollection
-        do_testrun(@test_collection.select_active_tests) # a Harness function
+        do_testrun(@test_collection._select_active_tests) # a Harness function
 
 
       end

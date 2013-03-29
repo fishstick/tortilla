@@ -4,8 +4,9 @@
 #:z=>100, :linked_ts=>"2011-12-14 12:34:17", :exec_on_tplan=>"", :name=>"Delete Application Fileset", :urgency=>2, :exec_status=>"n", :execution_order=>1000, :version=>1, :tc_id=>11914, :tsuite_name=>"File Sets", :priority=>4, :exec_id=>""}
 
 
-
+# TODO: Detect if keyed by strings instead of symbols..
 class TestCase
+  require 'logger'
   attr_accessor :urgency,:file,:external_id,:internal_id,:platforms,:tl_props ,:name, :platform_id
 
   # Create a new TestCase object
